@@ -12,3 +12,7 @@ terraform {
     }
   }
 }
+provider "rhcs" {
+  token = var.rhcs_token
+}
+ 
