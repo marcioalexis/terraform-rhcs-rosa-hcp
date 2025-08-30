@@ -336,3 +336,8 @@ variable "default_ingress_listening_method" {
   default     = ""
   description = "Listening Method for ingress. Options are [\"internal\", \"external\"]. Default is \"external\". When empty is set based on private variable."
 }
+variable "rhcs_token" {
+  description = "Token de acesso para o provider RHCS"
+  type        = string
+  sensitive   = true
+}
