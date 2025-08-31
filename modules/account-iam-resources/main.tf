@@ -100,8 +100,8 @@ resource "aws_iam_role_policy_attachment" "account_role_policy_attachment" {
 }
 
 resource "aws_iam_role_policy_attachment" "attach_ec2_policy_to_installer" {
-  count      = length([for role in local.account_roles_properties : role if role.role_name == "HCP-ROSA-Installer"])
-  role       = [for role in local.account_roles_properties : role.role_name if role.role_name == "HCP-ROSA-Installer"][count.index]
+  for_each   = { for role in local.account_roles_properties : role.role_name => role if role.role_name == "HCP-ROSA-Installer" }
+  role       = each.value.role_name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
 }
 
