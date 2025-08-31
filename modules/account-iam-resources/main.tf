@@ -13,6 +13,7 @@ locals {
       role_type      = "support"
       policy_details = "arn:aws:iam::aws:policy/service-role/ROSASRESupportPolicy"
       principal_type = "AWS"
+      // This is a SRE RH Support role which is used to assume this support role
       principal_identifier = data.rhcs_hcp_policies.all_policies.account_role_policies["sts_support_rh_sre_role"]
     },
     {
@@ -41,8 +42,11 @@ locals {
 }
 
 data "aws_caller_identity" "current" {}
+
 data "rhcs_hcp_policies" "all_policies" {}
+
 data "aws_partition" "current" {}
+
 data "rhcs_info" "current" {}
 
 data "aws_iam_policy_document" "custom_trust_policy" {
@@ -74,46 +78,24 @@ resource "aws_iam_role" "account_role" {
   })
 }
 
-resource "aws_iam_policy" "rosa_installer_ec2_policy" {
-  name        = "${local.account_role_prefix_valid}-ec2-run-policy"
-  description = "Allow EC2 RunInstances for ROSA installer"
-  policy      = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "ec2:RunInstances",
-          "ec2:DescribeImages",
-          "ec2:CreateTags"
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-}
-
 resource "aws_iam_role_policy_attachment" "account_role_policy_attachment" {
   count      = local.account_roles_count
   role       = aws_iam_role.account_role[count.index].name
   policy_arn = local.account_roles_properties[count.index].policy_details
 }
 
-resource "aws_iam_role_policy_attachment" "attach_ec2_policy_to_installer" {
-  count      = local.account_roles_properties[count.index].role_name == "HCP-ROSA-Installer" ? 1 : 0
-  role       = aws_iam_role.account_role[count.index].name
-  policy_arn = aws_iam_policy.rosa_installer_ec2_policy.arn
-}
-
 resource "random_string" "default_random" {
   count = (var.account_role_prefix != null && var.account_role_prefix != "") ? 0 : 1
+
   length  = 4
   special = false
   upper   = false
 }
 
+### Shared VPC resources
 resource "aws_iam_policy" "route53_policy" {
   count = (local.route53_shared_role_arn != "" && var.create_shared_vpc_policies) ? 1 : 0
+
   name = local.route53_policy_name
   policy = templatefile(
     "${path.module}/../../assets/assume_role_policy.tpl",
@@ -130,6 +112,7 @@ resource "aws_iam_policy" "route53_policy" {
 
 resource "aws_iam_policy" "vpce_policy" {
   count = (local.vpce_shared_role_arn != "" && var.create_shared_vpc_policies) ? 1 : 0
+
   name = local.vpce_policy_name
   policy = templatefile(
     "${path.module}/../../assets/assume_role_policy.tpl",
