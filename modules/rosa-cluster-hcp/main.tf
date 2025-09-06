@@ -2,33 +2,17 @@ locals {
   path           = coalesce(var.path, "/")
   aws_account_id = var.aws_account_id == null ? data.aws_caller_identity.current[0].account_id : var.aws_account_id
   sts_roles = {
-    role_arn = var.installer_role_arn != null ? (
-      var.installer_role_arn
-    ) : (
-      "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Installer-Role"
-    ),
-    support_role_arn = var.support_role_arn != null ? (
-      var.support_role_arn
-    ) : (
-      "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Support-Role"
-    ),
+    role_arn = var.installer_role_arn != null ? var.installer_role_arn : "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Installer-Role",
+    support_role_arn = var.support_role_arn != null ? var.support_role_arn : "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Support-Role",
     instance_iam_roles = {
-      worker_role_arn = var.worker_role_arn != null ? (
-        var.worker_role_arn
-      ) : (
-        "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Worker-Role"
-      ),
+      worker_role_arn = var.worker_role_arn != null ? var.worker_role_arn : "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Worker-Role"
     },
     operator_role_prefix = var.operator_role_prefix,
     oidc_config_id       = var.oidc_config_id
   }
   aws_account_arn   = var.aws_account_arn == null ? data.aws_caller_identity.current[0].arn : var.aws_account_arn
   create_admin_user = var.create_admin_user
-  admin_credentials = var.admin_credentials_username == null && var.admin_credentials_password == null ? (
-    null
-  ) : (
-    { username = var.admin_credentials_username, password = var.admin_credentials_password }
-  )
+  admin_credentials = var.admin_credentials_username == null && var.admin_credentials_password == null ? null : { username = var.admin_credentials_username, password = var.admin_credentials_password }
 }
 
 resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
@@ -37,28 +21,13 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
   channel_group                = var.version_channel_group
   upgrade_acknowledgements_for = var.upgrade_acknowledgements_for
   private                      = var.private
-  properties = merge(
-    {
-      rosa_creator_arn = local.aws_account_arn
-    },
-    var.properties
-  )
-  cloud_region   = data.aws_region.current[0].name
-  aws_account_id = local.aws_account_id
-  aws_billing_account_id = var.aws_billing_account_id == null || var.aws_billing_account_id == "" ? (
-    local.aws_account_id
-  ) : (var.aws_billing_account_id)
-  sts  = local.sts_roles
-  tags = var.tags
-  availability_zones = length(var.aws_availability_zones) > 0 ? (
-    var.aws_availability_zones
-  ) : (
-    length(var.aws_subnet_ids) > 0 ? (
-      distinct(data.aws_subnet.provided_subnet[*].availability_zone)
-    ) : (
-      slice(data.aws_availability_zones.available[0].names, 0, 1)
-    )
-  )
+  properties                   = merge({ rosa_creator_arn = local.aws_account_arn }, var.properties)
+  cloud_region                 = data.aws_region.current[0].name
+  aws_account_id               = local.aws_account_id
+  aws_billing_account_id       = var.aws_billing_account_id == null || var.aws_billing_account_id == "" ? local.aws_account_id : var.aws_billing_account_id
+  sts                          = local.sts_roles
+  tags                         = var.tags
+  availability_zones           = length(var.aws_availability_zones) > 0 ? var.aws_availability_zones : (length(var.aws_subnet_ids) > 0 ? distinct(data.aws_subnet.provided_subnet[*].availability_zone) : slice(data.aws_availability_zones.available[0].names, 0, 1))
   aws_additional_compute_security_group_ids = var.aws_additional_compute_security_group_ids
   replicas                                  = var.replicas
   aws_subnet_ids                            = var.aws_subnet_ids
@@ -66,21 +35,16 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
   create_admin_user                         = local.create_admin_user
   admin_credentials                         = local.admin_credentials
   ec2_metadata_http_tokens                  = var.ec2_metadata_http_tokens
-
-  machine_cidr = var.machine_cidr
-  service_cidr = var.service_cidr
-  pod_cidr     = var.pod_cidr
-  host_prefix  = var.host_prefix
-  proxy = var.http_proxy != null || var.https_proxy != null || var.no_proxy != null || var.additional_trust_bundle != null ? (
-    {
-      http_proxy              = var.http_proxy
-      https_proxy             = var.https_proxy
-      no_proxy                = var.no_proxy
-      additional_trust_bundle = var.additional_trust_bundle
-    }
-  ) : (
-    null
-  )
+  machine_cidr                              = var.machine_cidr
+  service_cidr                              = var.service_cidr
+  pod_cidr                                  = var.pod_cidr
+  host_prefix                               = var.host_prefix
+  proxy = var.http_proxy != null || var.https_proxy != null || var.no_proxy != null || var.additional_trust_bundle != null ? {
+    http_proxy              = var.http_proxy
+    https_proxy             = var.https_proxy
+    no_proxy                = var.no_proxy
+    additional_trust_bundle = var.additional_trust_bundle
+  } : null
   etcd_encryption                   = var.etcd_encryption
   etcd_kms_key_arn                  = var.etcd_kms_key_arn
   kms_key_arn                       = var.kms_key_arn
@@ -88,7 +52,6 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
   base_dns_domain                   = var.base_dns_domain
   domain_prefix                     = var.domain_prefix
   aws_additional_allowed_principals = var.aws_additional_allowed_principals
-
   wait_for_create_complete            = var.wait_for_create_complete
   wait_for_std_compute_nodes_complete = var.wait_for_std_compute_nodes_complete
   disable_waiting_in_destroy          = var.disable_waiting_in_destroy
@@ -96,29 +59,15 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
 
   lifecycle {
     precondition {
-      condition = (
-        !(var.installer_role_arn != null && var.support_role_arn != null && var.worker_role_arn != null)
-        && var.account_role_prefix == null
-      ) == false
-      error_message = "Either provide the \"account_role_prefix\" or specify all ARNs for account roles (\"installer_role_arn\", \"support_role_arn\", \"worker_role_arn\")."
+      condition     = (!(var.installer_role_arn != null && var.support_role_arn != null && var.worker_role_arn != null) && var.account_role_prefix == null) == false
+      error_message = "Either provide the \"account_role_prefix\" or specify all ARNs for account roles."
     }
     precondition {
-      condition = (
-        var.installer_role_arn != null && var.support_role_arn != null &&
-        var.worker_role_arn != null && var.account_role_prefix != null
-      ) == false
+      condition     = (var.installer_role_arn != null && var.support_role_arn != null && var.worker_role_arn != null && var.account_role_prefix != null) == false
       error_message = "The \"account_role_prefix\" shouldn't be provided when all ARNs for account roles are specified."
     }
     precondition {
-      condition = (
-        (
-          var.autoscaler_max_pod_grace_period != null ||
-          var.autoscaler_pod_priority_threshold != null ||
-          var.autoscaler_max_node_provision_time != null ||
-          var.autoscaler_max_nodes_total != null
-        )
-        && var.cluster_autoscaler_enabled != true
-      ) == false
+      condition     = ((var.autoscaler_max_pod_grace_period != null || var.autoscaler_pod_priority_threshold != null || var.autoscaler_max_node_provision_time != null || var.autoscaler_max_nodes_total != null) && var.cluster_autoscaler_enabled != true) == false
       error_message = "Autoscaler parameters cannot be modified while the cluster autoscaler is disabled."
     }
   }
@@ -135,35 +84,6 @@ resource "rhcs_hcp_cluster_autoscaler" "cluster_autoscaler" {
   resource_limits = {
     max_nodes_total = var.autoscaler_max_nodes_total
   }
-}
-
-resource "null_resource" "wait_for_cluster_ready" {
-  depends_on = [rhcs_cluster_rosa_hcp.rosa_hcp_cluster]
-
-  provisioner "local-exec" {
-    command = "echo 'Aguardando cluster estar pronto...'" # substitua por validação real se possível
-  }
-
-  triggers = {
-    cluster_id = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
-  }
-}
-
-resource "rhcs_hcp_default_ingress" "default_ingress" {
-  count = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id != "" ? 1 : 0
-
-  depends_on = [
-    rhcs_cluster_rosa_hcp.rosa_hcp_cluster,
-    null_resource.wait_for_cluster_ready
-  ]
-
-  cluster = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
-
-  listening_method = var.default_ingress_listening_method != "" ? (
-    var.default_ingress_listening_method
-  ) : (
-    var.private ? "internal" : "external"
-  )
 }
 
 data "aws_caller_identity" "current" {
@@ -186,6 +106,5 @@ data "aws_availability_zones" "available" {
 
 data "aws_subnet" "provided_subnet" {
   count = length(var.aws_subnet_ids)
-
-  id = var.aws_subnet_ids[count.index]
+  id    = var.aws_subnet_ids[count.index]
 }
