@@ -4,18 +4,18 @@ locals {
   sts_roles = {
     role_arn = var.installer_role_arn != null ? (
       var.installer_role_arn
-      ) : (
+    ) : (
       "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Installer-Role"
     ),
     support_role_arn = var.support_role_arn != null ? (
       var.support_role_arn
-      ) : (
+    ) : (
       "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Support-Role"
     ),
     instance_iam_roles = {
       worker_role_arn = var.worker_role_arn != null ? (
         var.worker_role_arn
-        ) : (
+      ) : (
         "arn:aws:iam::${local.aws_account_id}:role${local.path}${var.account_role_prefix}-HCP-ROSA-Worker-Role"
       ),
     },
@@ -26,7 +26,7 @@ locals {
   create_admin_user = var.create_admin_user
   admin_credentials = var.admin_credentials_username == null && var.admin_credentials_password == null ? (
     null
-    ) : (
+  ) : (
     { username = var.admin_credentials_username, password = var.admin_credentials_password }
   )
 }
@@ -52,10 +52,10 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
   tags = var.tags
   availability_zones = length(var.aws_availability_zones) > 0 ? (
     var.aws_availability_zones
-    ) : (
+  ) : (
     length(var.aws_subnet_ids) > 0 ? (
       distinct(data.aws_subnet.provided_subnet[*].availability_zone)
-      ) : (
+    ) : (
       slice(data.aws_availability_zones.available[0].names, 0, 1)
     )
   )
@@ -78,7 +78,7 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
       no_proxy                = var.no_proxy
       additional_trust_bundle = var.additional_trust_bundle
     }
-    ) : (
+  ) : (
     null
   )
   etcd_encryption                   = var.etcd_encryption
@@ -98,8 +98,7 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
     precondition {
       condition = (
         !(var.installer_role_arn != null && var.support_role_arn != null && var.worker_role_arn != null)
-        &&
-        var.account_role_prefix == null
+        && var.account_role_prefix == null
       ) == false
       error_message = "Either provide the \"account_role_prefix\" or specify all ARNs for account roles (\"installer_role_arn\", \"support_role_arn\", \"worker_role_arn\")."
     }
@@ -108,7 +107,7 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
         var.installer_role_arn != null && var.support_role_arn != null &&
         var.worker_role_arn != null && var.account_role_prefix != null
       ) == false
-      error_message = "The \"account_role_prefix\" shouldn't be provided when all ARNs for account roles are specified (\"installer_role_arn\", \"support_role_arn\", \"worker_role_arn\")."
+      error_message = "The \"account_role_prefix\" shouldn't be provided when all ARNs for account roles are specified."
     }
     precondition {
       condition = (
@@ -120,7 +119,7 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
         )
         && var.cluster_autoscaler_enabled != true
       ) == false
-      error_message = "Autoscaler parameters cannot be modified while the cluster autoscaler is disabled. Please ensure that cluster_autoscaler_enabled variable is set to true"
+      error_message = "Autoscaler parameters cannot be modified while the cluster autoscaler is disabled."
     }
   }
 }
@@ -138,12 +137,31 @@ resource "rhcs_hcp_cluster_autoscaler" "cluster_autoscaler" {
   }
 }
 
-resource "rhcs_hcp_default_ingress" "default_ingress" {
+resource "null_resource" "wait_for_cluster_ready" {
   depends_on = [rhcs_cluster_rosa_hcp.rosa_hcp_cluster]
-  count   = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.wait_for_create_complete ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "echo 'Aguardando cluster estar pronto...'" # substitua por validação real se possível
+  }
+
+  triggers = {
+    cluster_id = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
+  }
+}
+
+resource "rhcs_hcp_default_ingress" "default_ingress" {
+  count = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id != "" ? 1 : 0
+
+  depends_on = [
+    rhcs_cluster_rosa_hcp.rosa_hcp_cluster,
+    null_resource.wait_for_cluster_ready
+  ]
+
   cluster = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
+
   listening_method = var.default_ingress_listening_method != "" ? (
-    var.default_ingress_listening_method) : (
+    var.default_ingress_listening_method
+  ) : (
     var.private ? "internal" : "external"
   )
 }
@@ -160,7 +178,6 @@ data "aws_availability_zones" "available" {
   count = length(var.aws_availability_zones) > 0 ? 0 : 1
   state = "available"
 
-  # New configuration to exclude Local Zones
   filter {
     name   = "opt-in-status"
     values = ["opt-in-not-required"]
