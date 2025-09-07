@@ -96,7 +96,6 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
 
   lifecycle {
     ignore_changes = [
-      ingress,         # Ignora mudanças externas no ingress
       console_url,     # Ignora mudanças externas na URL do console
       api_url          # Ignora mudanças externas na URL da API
     ]
