@@ -152,15 +152,15 @@ resource "rhcs_hcp_cluster_autoscaler" "cluster_autoscaler" {
 #  )
 #}
 resource "rhcs_hcp_default_ingress" "default_ingress" {
-  for_each = try({ "default" = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id }, {})
+  count = var.enable_default_ingress ? 1 : 0
 
-  cluster          = each.value
-  depends_on       = [rhcs_cluster_rosa_hcp.rosa_hcp_cluster]
+  cluster          = var.cluster_id
   listening_method = var.default_ingress_listening_method != "" ? (
     var.default_ingress_listening_method) : (
     var.private ? "internal" : "external"
   )
 }
+
 
 data "aws_caller_identity" "current" {
   count = var.aws_account_id == null || var.aws_account_arn == null ? 1 : 0
