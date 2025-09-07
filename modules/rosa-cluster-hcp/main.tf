@@ -43,11 +43,6 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
     },
     var.properties
   )
-    lifecycle {
-    ignore_changes = [
-      ingress, # ou outro campo que esteja causando o erro
-    ]
-  }
   cloud_region   = data.aws_region.current[0].name
   aws_account_id = local.aws_account_id
   aws_billing_account_id = var.aws_billing_account_id == null || var.aws_billing_account_id == "" ? (
@@ -100,6 +95,11 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
   destroy_timeout                     = var.destroy_timeout
 
   lifecycle {
+    ignore_changes = [
+      ingress,         # Ignora mudanças externas no ingress
+      console_url,     # Ignora mudanças externas na URL do console
+      api_url          # Ignora mudanças externas na URL da API
+    ]
     precondition {
       condition = (
         !(var.installer_role_arn != null && var.support_role_arn != null && var.worker_role_arn != null)
