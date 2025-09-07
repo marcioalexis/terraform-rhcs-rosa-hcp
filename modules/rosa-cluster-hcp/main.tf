@@ -95,6 +95,7 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
   destroy_timeout                     = var.destroy_timeout
 
   lifecycle {
+    create_before_destroy = true
     ignore_changes = [
       console_url,     # Ignora mudanças externas na URL do console
       api_url          # Ignora mudanças externas na URL da API
