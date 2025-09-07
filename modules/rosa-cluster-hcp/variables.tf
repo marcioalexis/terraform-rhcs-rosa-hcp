@@ -15,6 +15,12 @@ variable "aws_region" {
   description = "The full name of the AWS region used for the ROSA cluster installation, for example 'us-east-1'. If no information is provided, the data will be retrieved from the currently connected account."
 }
 
+variable "cluster_id" {
+  description = "ID do cluster para ser usado no recurso default_ingress"
+  type        = string
+  default     = ""
+}
+
 variable "path" {
   type        = string
   default     = "/"
