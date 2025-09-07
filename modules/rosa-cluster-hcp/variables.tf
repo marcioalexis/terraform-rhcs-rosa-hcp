@@ -3,6 +3,12 @@ variable "cluster_name" {
   description = "Name of the cluster. After the creation of the resource, it is not possible to update the attribute value."
 }
 
+variable "enable_default_ingress" {
+  description = "Controla se o recurso default_ingress deve ser criado"
+  type        = bool
+  default     = false
+}
+
 variable "aws_region" {
   type        = string
   default     = null
