@@ -1,7 +1,3 @@
-output "cluster_id" {
-  value       = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
-  description = "The identification of the cluster in OCM"
-}
 
 output "cluster_admin_username" {
   value       = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.admin_credentials == null ? null : rhcs_cluster_rosa_hcp.rosa_hcp_cluster.admin_credentials.username
