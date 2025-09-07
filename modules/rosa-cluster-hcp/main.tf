@@ -151,15 +151,6 @@ resource "rhcs_hcp_cluster_autoscaler" "cluster_autoscaler" {
 #    var.private ? "internal" : "external"
 #  )
 #}
-resource "rhcs_hcp_default_ingress" "default_ingress" {
-  count = var.enable_default_ingress ? 1 : 0
-
-  cluster          = var.cluster_id
-  listening_method = var.default_ingress_listening_method != "" ? (
-    var.default_ingress_listening_method) : (
-    var.private ? "internal" : "external"
-  )
-}
 
 
 data "aws_caller_identity" "current" {
