@@ -43,7 +43,7 @@ resource "rhcs_cluster_rosa_hcp" "rosa_hcp_cluster" {
     },
     var.properties
   )
-  cloud_region   = var.aws_region == null ? data.aws_region.current[0].region : var.aws_region
+  cloud_region   = data.aws_region.current[0].name
   aws_account_id = local.aws_account_id
   aws_billing_account_id = var.aws_billing_account_id == null || var.aws_billing_account_id == "" ? (
     local.aws_account_id
@@ -138,14 +138,15 @@ resource "rhcs_hcp_cluster_autoscaler" "cluster_autoscaler" {
   }
 }
 
-resource "rhcs_hcp_default_ingress" "default_ingress" {
-  count   = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.wait_for_create_complete ? 1 : 0
-  cluster = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
-  listening_method = var.default_ingress_listening_method != "" ? (
-    var.default_ingress_listening_method) : (
-    var.private ? "internal" : "external"
-  )
-}
+#resource "rhcs_hcp_default_ingress" "default_ingress" {
+#  depends_on = [rhcs_cluster_rosa_hcp.rosa_hcp_cluster]
+#  count   = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.wait_for_create_complete ? 1 : 0
+#  cluster = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
+#  listening_method = var.default_ingress_listening_method != "" ? (
+#    var.default_ingress_listening_method) : (
+#    var.private ? "internal" : "external"
+#  )
+#}
 
 data "aws_caller_identity" "current" {
   count = var.aws_account_id == null || var.aws_account_arn == null ? 1 : 0
