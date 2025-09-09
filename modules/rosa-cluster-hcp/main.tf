@@ -45,15 +45,15 @@ resource "rhcs_hcp_cluster_autoscaler" "cluster_autoscaler" {
   }
 }
 
-#resource "rhcs_hcp_default_ingress" "default_ingress" {
-#  depends_on = [rhcs_cluster_rosa_hcp.rosa_hcp_cluster]
-#  count   = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id != "" ? 1 : 0
-#  cluster = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
-#  listening_method = var.default_ingress_listening_method != "" ? (
-#    var.default_ingress_listening_method) : (
-#    var.private ? "internal" : "external"
-#  )
-#}
+resource "rhcs_hcp_default_ingress" "default_ingress" {
+  depends_on = [rhcs_cluster_rosa_hcp.rosa_hcp_cluster]
+  count   = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id != "" ? 1 : 0
+  cluster = rhcs_cluster_rosa_hcp.rosa_hcp_cluster.id
+  listening_method = var.default_ingress_listening_method != "" ? (
+    var.default_ingress_listening_method) : (
+    var.private ? "internal" : "external"
+  )
+}
 
 
 data "aws_caller_identity" "current" {
